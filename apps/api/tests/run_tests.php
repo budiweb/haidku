@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+echo "========================================\n";
+echo "   HaidKu PHP Automated Test Suite      \n";
+echo "========================================\n\n";
+
+require_once __DIR__ . '/CycleCalculatorTest.php';
+require_once __DIR__ . '/PeriodApiTest.php';
+
+$t1 = new CycleCalculatorTest();
+$res1 = $t1->run();
+
+echo "\n----------------------------------------\n";
+
+$t2 = new PeriodApiTest();
+$res2 = $t2->run();
+
+echo "\n========================================\n";
+if ($res1 && $res2) {
+    echo "SEMUA TEST PHP LULUS (100% SUKSES)!\n";
+    exit(0);
+} else {
+    echo "ADA TEST YANG GAGAL!\n";
+    exit(1);
+}

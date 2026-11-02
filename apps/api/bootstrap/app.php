@@ -1,0 +1,79 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../src/Config/Database.php';
+require_once __DIR__ . '/../src/Middleware/CorsMiddleware.php';
+require_once __DIR__ . '/../src/Middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../src/Services/CycleCalculatorService.php';
+require_once __DIR__ . '/../src/Repositories/PeriodRepository.php';
+require_once __DIR__ . '/../src/Repositories/UserRepository.php';
+require_once __DIR__ . '/../src/Controllers/PeriodController.php';
+require_once __DIR__ . '/../src/Controllers/UserController.php';
+require_once __DIR__ . '/../src/Controllers/ArticleController.php';
+require_once __DIR__ . '/../src/Router.php';
+
+// Muat .env jika ada
+$envFile = __DIR__ . '/../../../.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (str_contains($line, '=')) {
+            [$k, $v] = explode('=', $line, 2);
+            $k = trim($k);
+            $v = trim($v, " \t\n\r\0\x0B\"'");
+            $_ENV[$k] = $v;
+            putenv("$k=$v");
+        }
+    }
+}
+
+// Inisialisasi Database & Services
+$db = \HaidKu\Config\Database::getConnection();
+$periodRepo = new \HaidKu\Repositories\PeriodRepository($db);
+$userRepo = new \HaidKu\Repositories\UserRepository($db);
+$cycleCalculator = new \HaidKu\Services\CycleCalculatorService();
+
+$periodController = new \HaidKu\Controllers\PeriodController($periodRepo, $cycleCalculator);
+$userController = new \HaidKu\Controllers\UserController($userRepo);
+$articleController = new \HaidKu\Controllers\ArticleController($db);
+
+$router = new \HaidKu\Router();
+
+// Routes definition
+$router->add('GET', '/api/v1/health', function () {
+    http_response_code(200);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'status'    => 'ok',
+        'service'   => 'HaidKu REST API',
+        'version'   => '1.0.0',
+        'timestamp' => gmdate('Y-m-d\TH:i:s\Z'),
+    ]);
+});
+
+// Period endpoints
+$router->add('GET', '/api/v1/periods', [$periodController, 'index']);
+$router->add('POST', '/api/v1/periods', [$periodController, 'store']);
+$router->add('GET', '/api/v1/periods/{id}', [$periodController, 'show']);
+$router->add('PATCH', '/api/v1/periods/{id}', [$periodController, 'update']);
+$router->add('PUT', '/api/v1/periods/{id}', [$periodController, 'update']);
+$router->add('DELETE', '/api/v1/periods/{id}', [$periodController, 'destroy']);
+
+// Cycle stats & calendar
+$router->add('GET', '/api/v1/cycles/summary', [$periodController, 'summary']);
+$router->add('GET', '/api/v1/cycles/calendar', [$periodController, 'calendar']);
+
+// Educational Articles
+$router->add('GET', '/api/v1/educational-articles', [$articleController, 'index']);
+
+// User & Settings
+$router->add('GET', '/api/v1/me', [$userController, 'me']);
+$router->add('PUT', '/api/v1/me/settings', [$userController, 'updateSettings']);
+$router->add('GET', '/api/v1/export', [$userController, 'export']);
+$router->add('DELETE', '/api/v1/me/data', [$userController, 'deleteData']);
+
+return $router;

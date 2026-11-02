@@ -1,33 +1,153 @@
-# Paket Pengembangan HaidKu untuk Antigravity IDE
+# HaidKu — Kenali Siklusmu, Pahami Tubuhmu
 
-**Nama produk:** HaidKu  
-**Tagline:** Kenali Siklusmu, Pahami Tubuhmu  
-**Bentuk:** PWA terlebih dahulu, kemudian Hybrid Android/iOS via Capacitor.  
-**Teknologi:** PHP 8.3 Native + MySQL 8 + Vite/JS + Tailwind + IndexedDB + PWA + Capacitor.
+> **Aplikasi Menstruasi PWA + Hybrid (Android/iOS)**  
+> Dibangun dengan standar keselamatan klinis, privasi tinggi (UU No. 27/2022 PDP), dan arsitektur satu codebase frontend (Vite + Tailwind CSS + IndexedDB) dengan backend PHP 8.3 Native REST API + MySQL 8.
 
-## Isi paket
-- `PROJECT.md`: ringkasan proyek dan milestone.
-- `AGENTS.md`: aturan agent workspace (dibaca Antigravity saat berada di root project).
-- `KONSEP_HAIDKU.md`: positioning, fitur, batasan medis, UX.
-- `PRD_HAIDKU.md`: kebutuhan lengkap, algoritma, user stories, endpoint, test, roadmap.
-- `ARSITEKTUR_HAIDKU.md`: pola integrasi frontend PWA/Capacitor dan API PHP.
-- `ERD_HAIDKU.md`: entitas DB server dan storage offline.
-- `TEST_CASES_HAIDKU.md`: test checklist T01–T37.
-- `PROMPT_ANTIGRAVITY_HAIDKU.md`: prompt utama dan prompt sprint.
+---
 
-## Pakai di Antigravity
-1. Buat folder kosong untuk repo `haidku/` atau buka repo HaidKu yang sudah ada.
-2. Taruh `AGENTS.md` dan `PROJECT.md` di **root repo**. Buat subfolder `docs/`, lalu salin seluruh file `.md` lainnya ke dalam `docs/` kecuali README yang berada di root.
-3. Buka folder repo sebagai workspace di Antigravity IDE. Buat percakapan Agent baru; tempel isi bagian **Prompt utama** dari `docs/PROMPT_ANTIGRAVITY_HAIDKU.md`.
-4. Agent harus audit repo, menulis `IMPLEMENTATION_PLAN.md`, lalu mengerjakan Sprint 0–1 secara nyata.
-5. Lanjutkan prompt per sprint jika dibutuhkan. Audit hasil tes/browser sebelum produksi.
+## ⚠️ Batasan & Peringatan Medis Wajib
+- **HaidKu tidak pernah menyatakan adanya "hari aman", "100% bebas risiko", atau "mustahil hamil".**
+- Prediksi kalender dan estimasi masa subur adalah perkiraan edukatif, **bukan** konfirmasi ovulasi.
+- Mode Standard Days Method (SDM) dipisahkan dari estimasi ovulasi dan memiliki syarat kelayakan konservatif (siklus 26–32 hari, minimal 3 siklus lengkap tercatat).
+- Aplikasi ini belum divalidasi sebagai alat kontrasepsi resmi dan tidak menggantikan konseling tenaga medis.
 
-**Catatan ZIP:** paket ZIP ini menyimpan file langsung pada struktur yang disarankan (`AGENTS.md`, `PROJECT.md`, dan `README.md` di root, dokumen lain di `docs/`) sehingga bisa diekstrak ke folder proyek.
+---
 
-## Peringatan medis
-Metode kalender tidak dapat menentukan "hari aman" berhubungan tanpa kontrasepsi. Mode SDM hanya memberi kategori peluang kehamilan relatif; hari 8–19 merupakan periode yang harus dihindari untuk seks tanpa perlindungan jika ingin mencegah hamil bagi pengguna dengan siklus yang memenuhi kriteria. Efektivitas tahunan SDM bukan probabilitas tanggal tertentu. Aplikasi belum divalidasi sebagai metode kontrasepsi.
+## 🛠️ Stack Teknologi
+- **Frontend:** Single Page Application (SPA), JavaScript ES Modules, Vite 6, Tailwind CSS 3, PWA (Service Worker + Manifest), IndexedDB local store.
+- **Backend API:** PHP 8.3 Native (tanpa framework, tanpa Laravel), PDO Prepared Statements, MySQL 8, URL `/` tanpa kewajiban `/public`.
+- **Hybrid Native:** Siap diintegrasikan ke Capacitor (`webDir: apps/web/dist`).
+- **Keamanan & Privasi:** Guest-first (bekerja 100% offline tanpa login), enkripsi data sensitif lokal, kepemilikan data terisolasi, ekspor data (JSON) & penghapusan permanen.
 
-## Rujukan
-- CDC: https://www.cdc.gov/contraception/hcp/usspr/standard-days-method.html
-- Capacitor: https://capacitorjs.com/docs
-- Antigravity rules: https://antigravity.google/docs/rules/
+---
+
+## 🚀 Panduan Menjalankan di Lokal
+
+### 1. Prasyarat
+- PHP 8.3+ (aktif di CLI atau via XAMPP)
+- MySQL 8+ (aktif di port 3306)
+- Node.js 20+ & npm
+
+### 2. Konfigurasi Database & Environment
+Salin file konfigurasi lingkungan:
+```bash
+cp .env.example .env
+```
+Sesuaikan kredensial basis data pada `.env` bila diperlukan:
+```ini
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=haidku
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Jalankan migrasi basis data dan seeder artikel edukasi:
+```bash
+php database/migrate.php --seed
+```
+
+### 3. Build & Jalankan Frontend
+Masuk ke folder `apps/web`:
+```bash
+cd apps/web
+npm install
+npm run build
+```
+Hasil build akan berada di `apps/web/dist`.
+
+### 4. Menjalankan Aplikasi
+Aplikasi dapat dijalankan melalui dua cara:
+
+#### Opsi A: Menggunakan XAMPP Apache Langsung
+Letakkan folder ini di `c:/xampp/htdocs/haidku`.  
+Buka browser pada:
+- **Aplikasi Web / PWA:** `http://localhost/haidku/`
+- **Health Check API:** `http://localhost/haidku/api/v1/health`
+
+#### Opsi B: Menggunakan PHP Built-in Server
+Dari root folder proyek (`c:/xampp/htdocs/haidku`):
+```bash
+php -S 127.0.0.1:8000 index.php
+```
+Buka browser pada `http://127.0.0.1:8000/`.
+
+---
+
+## 🧪 Menjalankan Pengujian Otomatis
+
+### 1. Test Suite Backend PHP (Unit, Date Math, Repository & Ownership)
+Menguji selisih kalender (T01), durasi menstruasi inklusif (T02), tahun kabisat (T17), isolasi data pengguna (T19), idempotency (T27), dan filtering flek/spotting (T11):
+```bash
+php apps/api/tests/run_tests.php
+```
+*Hasil: 22 tests passed, 0 failed (100% success).*
+
+### 2. Test Suite Frontend JavaScript (Domain Parity)
+```bash
+node apps/web/tests/cycleEngine.test.js
+```
+*Hasil: 12 tests passed, 0 failed (100% success).*
+
+---
+
+## 📂 Struktur Direktori
+```text
+haidku/
+├── AGENTS.md                  # Aturan wajib Antigravity IDE
+├── IMPLEMENTATION_PLAN.md     # Rencana implementasi & status sprint
+├── PROJECT.md                 # Deskripsi produk & batasan
+├── README.md                  # Dokumentasi teknis & panduan lokal
+├── index.php                  # Entrypoint root (tanpa /public di URL)
+├── .htaccess                  # Apache URL rewrite rules
+├── .env.example               # Contoh konfigurasi environment
+├── apps/
+│   ├── api/                   # PHP 8.3 Native REST API
+│   │   ├── bootstrap/         # Dependency wiring & router mapping
+│   │   ├── src/
+│   │   │   ├── Config/        # Database PDO connection
+│   │   │   ├── Controllers/   # Period, User, Article controllers
+│   │   │   ├── Middleware/    # CORS & Guest/Auth middleware
+│   │   │   ├── Repositories/  # Period & User data access
+│   │   │   ├── Services/      # CycleCalculatorService (domain logic)
+│   │   │   └── Router.php     # REST API router
+│   │   └── tests/             # Automated test suite (PHP)
+│   └── web/                   # Frontend Vite + Tailwind + PWA
+│       ├── public/            # Manifest, service worker, favicon
+│       ├── src/
+│       │   ├── adapters/      # API & offline adapter
+│       │   ├── components/    # Header, BottomNav, PeriodModal, OnboardingModal
+│       │   ├── domain/        # CycleEngine.js (pure functions)
+│       │   ├── pages/         # Dashboard, Calendar, History, Stats, Education
+│       │   ├── storage/       # IndexedDB offlineStore.js
+│       │   ├── main.js        # App bootstrap
+│       │   └── style.css      # Tailwind directives & transitions
+│       ├── tests/             # Domain tests (JS)
+│       ├── index.html
+│       ├── package.json
+│       ├── vite.config.js
+│       └── tailwind.config.js
+└── database/
+    ├── migrations/            # SQL migrations
+    ├── seeds/                 # Educational articles & demo data
+    └── migrate.php            # Migration runner
+```
+
+---
+
+## 📑 Dokumentasi Endpoint REST API (`/api/v1`)
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| `GET` | `/api/v1/health` | Status API, versi & timestamp |
+| `GET` | `/api/v1/periods` | Daftar catatan haid pengguna aktif (filter `from` & `to`) |
+| `POST` | `/api/v1/periods` | Tambah catatan haid baru (idempotent via `client_mutation_id`) |
+| `GET` | `/api/v1/periods/{id}` | Rincian catatan haid berdasarkan ID |
+| `PATCH` | `/api/v1/periods/{id}` | Perbarui catatan haid |
+| `DELETE` | `/api/v1/periods/{id}` | Hapus catatan haid (soft-delete) |
+| `GET` | `/api/v1/cycles/summary` | Statistik siklus (median, prediksi haid, ovulasi edukatif) |
+| `GET` | `/api/v1/cycles/calendar` | Pemetaan hari per bulan (aktual, prediksi, masa subur) |
+| `GET` | `/api/v1/educational-articles` | Artikel edukasi klinis tervalidasi |
+| `GET` | `/api/v1/me` | Profil & preferensi pengguna aktif |
+| `PUT` | `/api/v1/me/settings` | Perbarui tujuan, preferensi privasi & notifikasi |
+| `GET` | `/api/v1/export` | Ekspor seluruh data pengguna (UU PDP JSON format) |
+| `DELETE` | `/api/v1/me/data` | Hapus permanen seluruh data pengguna |

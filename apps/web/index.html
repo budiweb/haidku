@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>HaidKu — Kenali Siklusmu, Pahami Tubuhmu</title>
+  <meta name="description" content="Aplikasi pencatat haid, prediksi siklus menstruasi, dan edukasi kesuburan alami berbasis Standard Days Method dengan privasi tinggi." />
+  <meta name="theme-color" content="#D96B8C" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="HaidKu" />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body class="bg-surface text-gray-800 antialiased min-h-screen flex flex-col font-sans select-none">
+  <div id="app" class="flex-1 flex flex-col max-w-md mx-auto w-full bg-white shadow-sm min-h-screen relative pb-20">
+    <!-- Konten dinamis dimuat oleh JavaScript -->
+  </div>
+
+  <!-- Global Modal Container -->
+  <div id="modal-root"></div>
+
+  <!-- Global Toast Notification -->
+  <div id="toast-root" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300"></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
