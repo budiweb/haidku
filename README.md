@@ -76,19 +76,21 @@ Buka browser pada `http://127.0.0.1:8000/`.
 
 ## 🧪 Menjalankan Pengujian Otomatis
 
-### 1. Test Suite Backend PHP (Unit, Date Math, Repository, Ownership, SDM, Sync)
-Menguji selisih kalender (T01), durasi menstruasi inklusif (T02), tahun kabisat (T17), isolasi data pengguna (T19), idempotency (T27), filtering flek/spotting (T11), aturan klinis Standard Days Method T03-T13, T18, audit copy medis (T23), dan sinkronisasi mutasi T21, T26:
+### 1. Test Suite Backend PHP (Unit, Date Math, Repository, Ownership, SDM, Sync, Symptoms)
+Menguji selisih kalender (T01), durasi menstruasi inklusif (T02), tahun kabisat (T17), isolasi data pengguna (T19), idempotency (T27), filtering flek/spotting (T11), aturan klinis Standard Days Method T03-T13, T18, audit copy medis (T23), sinkronisasi mutasi T21, T26, serta CRUD dan isolasi gejala harian:
 ```bash
 php apps/api/tests/run_tests.php
 ```
-*Hasil: 49 tests passed, 0 failed (100% success).*
+*Hasil: 62 tests passed, 0 failed (100% success).*
 
-### 2. Test Suite Frontend JavaScript (Domain Parity, SDM, Privacy Lock Screen)
-Menguji CycleEngine, SDMEngine, audit teks medis, dan privasi notifikasi pada lock screen (T20, T28, T29):
+### 2. Test Suite Frontend JavaScript (Domain Parity, SDM, Privacy Lock Screen, Platform)
+Menguji CycleEngine, SDMEngine, audit teks medis, privasi notifikasi pada lock screen (T20, T28, T29), zona waktu (T33), stale method fallback (T35), dan audit aset statis native (T36):
 ```bash
 node apps/web/tests/cycleEngine.test.js
 ```
-*Hasil: 27 tests passed, 0 failed (100% success).*
+*Hasil: 34 tests passed, 0 failed (100% success).*
+
+*(Total: 96 automated tests passed, 100% lulus).*
 
 ---
 
@@ -166,6 +168,10 @@ haidku/
 | `GET` | `/api/v1/periods/{id}` | Rincian catatan haid berdasarkan ID |
 | `PATCH` | `/api/v1/periods/{id}` | Perbarui catatan haid |
 | `DELETE` | `/api/v1/periods/{id}` | Hapus catatan haid (soft-delete) |
+| `GET` | `/api/v1/symptoms` | Riwayat gejala harian pengguna (filter `from` & `to`) |
+| `POST` | `/api/v1/symptoms` | Simpan / perbarui catatan gejala harian & mood |
+| `GET` | `/api/v1/symptoms/{date}` | Rincian catatan gejala harian pada tanggal spesifik |
+| `DELETE` | `/api/v1/symptoms/{date}` | Hapus catatan gejala harian |
 | `GET` | `/api/v1/cycles/summary` | Statistik siklus (median, prediksi haid, ovulasi edukatif) |
 | `GET` | `/api/v1/cycles/calendar` | Pemetaan hari per bulan (aktual, prediksi, masa subur) |
 | `GET` | `/api/v1/fertility/estimate` | Estimasi jendela subur edukatif & probabilitas kualitatif |
