@@ -8,10 +8,12 @@ require_once __DIR__ . '/../src/Services/CycleCalculatorService.php';
 require_once __DIR__ . '/../src/Services/SDMService.php';
 require_once __DIR__ . '/../src/Repositories/PeriodRepository.php';
 require_once __DIR__ . '/../src/Repositories/UserRepository.php';
+require_once __DIR__ . '/../src/Repositories/SyncRepository.php';
 require_once __DIR__ . '/../src/Controllers/PeriodController.php';
 require_once __DIR__ . '/../src/Controllers/UserController.php';
 require_once __DIR__ . '/../src/Controllers/ArticleController.php';
 require_once __DIR__ . '/../src/Controllers/FertilityController.php';
+require_once __DIR__ . '/../src/Controllers/SyncController.php';
 require_once __DIR__ . '/../src/Router.php';
 
 // Muat .env jika ada
@@ -37,6 +39,7 @@ if (file_exists($envFile)) {
 $db = \HaidKu\Config\Database::getConnection();
 $periodRepo = new \HaidKu\Repositories\PeriodRepository($db);
 $userRepo = new \HaidKu\Repositories\UserRepository($db);
+$syncRepo = new \HaidKu\Repositories\SyncRepository($db);
 $cycleCalculator = new \HaidKu\Services\CycleCalculatorService();
 $sdmService = new \HaidKu\Services\SDMService();
 
@@ -44,6 +47,7 @@ $periodController = new \HaidKu\Controllers\PeriodController($periodRepo, $cycle
 $userController = new \HaidKu\Controllers\UserController($userRepo);
 $articleController = new \HaidKu\Controllers\ArticleController($db);
 $fertilityController = new \HaidKu\Controllers\FertilityController($periodRepo, $userRepo, $cycleCalculator, $sdmService, $db);
+$syncController = new \HaidKu\Controllers\SyncController($syncRepo, $userRepo);
 
 $router = new \HaidKu\Router();
 
@@ -75,6 +79,10 @@ $router->add('GET', '/api/v1/cycles/calendar', [$periodController, 'calendar']);
 $router->add('GET', '/api/v1/fertility/estimate', [$fertilityController, 'estimate']);
 $router->add('GET', '/api/v1/fertility/sdm-status', [$fertilityController, 'sdmStatus']);
 $router->add('POST', '/api/v1/acknowledgements', [$fertilityController, 'acknowledge']);
+
+// Offline Sync Endpoints (Idempotent & Conflict-aware)
+$router->add('POST', '/api/v1/sync/push', [$syncController, 'push']);
+$router->add('GET', '/api/v1/sync/pull', [$syncController, 'pull']);
 
 // Educational Articles
 $router->add('GET', '/api/v1/educational-articles', [$articleController, 'index']);

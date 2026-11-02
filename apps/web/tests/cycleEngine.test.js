@@ -1,5 +1,5 @@
 /**
- * cycleEngine.test.js — Frontend unit tests for domain cycle & SDM calculations
+ * cycleEngine.test.js — Frontend unit tests for domain cycle, SDM & privacy notifications
  */
 
 import { CycleEngine } from '../src/domain/CycleEngine.js';
@@ -18,7 +18,7 @@ function assert(condition, name) {
   }
 }
 
-console.log('Menjalankan CycleEngine & SDMEngine Unit Tests (Sprint 2 & 3 Parity)...\n');
+console.log('Menjalankan CycleEngine & SDMEngine Unit Tests (Sprint 2, 3, 4 Parity)...\n');
 
 // T01: 1 Jan -> 29 Jan = 28 hari siklus
 const diff1 = CycleEngine.calculateDaysBetween('2026-01-01', '2026-01-29');
@@ -65,7 +65,7 @@ assert(stats.currentCycleDay === 10, 'Hari ke-10 siklus pada tanggal 2026-03-10'
 // T14: Ubah tanggal riwayat haid masa lalu => hasil langsung berubah
 const modifiedPeriods = [
   { start_date: '2026-03-01', end_date: '2026-03-05', bleeding_type: 'period', status: 'confirmed' },
-  { start_date: '2026-01-30', end_date: '2026-02-03', bleeding_type: 'period', status: 'confirmed' }, // diubah 2 hari lebih awal
+  { start_date: '2026-01-30', end_date: '2026-02-03', bleeding_type: 'period', status: 'confirmed' },
   { start_date: '2026-01-04', end_date: '2026-01-08', bleeding_type: 'period', status: 'confirmed' },
 ];
 const recalcStats = CycleEngine.computeCycleStats(modifiedPeriods, '2026-03-10');
@@ -147,6 +147,39 @@ for (const msg of allMsgs) {
   }
 }
 assert(!hasForbidden, 'T23: Audit copy bebas frasa terlarang');
+
+// ----------------------------------------
+// Privacy & Notifications Tests (T20, T28, T29)
+// ----------------------------------------
+console.log('\nMenjalankan Privacy & Notification Tests (T20, T28, T29)...');
+
+const defaultLockScreenTitle = 'Pengingat HaidKu';
+const defaultLockScreenBody = 'Buka aplikasi untuk melihat catatan harian Anda.';
+
+// T20 & T29: Lock screen tidak boleh membocorkan tanggal haid, masa subur, ovulasi, atau riwayat seks
+const sensitiveTerms = [
+  'tanggal haid',
+  'darah haid',
+  'masa subur',
+  'hari subur',
+  'ovulasi',
+  'hubungan intim',
+  'hubungan seks',
+  'peluang hamil',
+  'kehamilan',
+  'kontrasepsi',
+  'sdm',
+];
+
+let hasSensitiveOnLockScreen = false;
+const fullLockScreenText = (defaultLockScreenTitle + ' ' + defaultLockScreenBody).toLowerCase();
+for (const term of sensitiveTerms) {
+  if (fullLockScreenText.includes(term)) {
+    hasSensitiveOnLockScreen = true;
+    console.error(`  [FAIL] Ditemukan istilah reproduksi sensitif '${term}' pada notifikasi lock screen default!`);
+  }
+}
+assert(!hasSensitiveOnLockScreen, 'T20 & T29: Default lock screen bebas dari detail tanggal haid/masa subur');
 
 console.log(`\nHasil Pengujian JS: ${passed} Passed, ${failed} Failed`);
 if (failed > 0) {

@@ -107,3 +107,4 @@ export function openSDMConsentModal({ onConsentGiven, onCancel }) {
     if (onConsentGiven) onConsentGiven();
   });
 }
+

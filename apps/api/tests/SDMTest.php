@@ -122,3 +122,4 @@ class SDMTest
         return $this->failed === 0;
     }
 }
+

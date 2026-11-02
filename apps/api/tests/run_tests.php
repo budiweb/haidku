@@ -8,6 +8,7 @@ echo "========================================\n\n";
 require_once __DIR__ . '/CycleCalculatorTest.php';
 require_once __DIR__ . '/SDMTest.php';
 require_once __DIR__ . '/PeriodApiTest.php';
+require_once __DIR__ . '/SyncTest.php';
 
 $t1 = new CycleCalculatorTest();
 $res1 = $t1->run();
@@ -22,8 +23,13 @@ echo "\n----------------------------------------\n";
 $t3 = new PeriodApiTest();
 $res3 = $t3->run();
 
+echo "\n----------------------------------------\n";
+
+$t4 = new SyncTest();
+$res4 = $t4->run();
+
 echo "\n========================================\n";
-if ($res1 && $res2 && $res3) {
+if ($res1 && $res2 && $res3 && $res4) {
     echo "SEMUA TEST PHP LULUS (100% SUKSES)!\n";
     exit(0);
 } else {

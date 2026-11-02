@@ -1,19 +1,20 @@
 /**
- * EducationPage.js — Clinical education, medical disclaimers & privacy controls
+ * EducationPage.js — Clinical education, medical disclaimers, PWA settings & privacy controls
  */
 
 import { offlineStore } from '../storage/offlineStore.js';
 import { apiAdapter } from '../adapters/apiAdapter.js';
+import { notificationAdapter } from '../adapters/notificationAdapter.js';
 
-export function renderEducationPage({ onResetApp }) {
+export function renderEducationPage({ onResetApp, onToast }) {
   const container = document.createElement('div');
   container.className = 'p-4 space-y-4 fade-in';
 
   container.innerHTML = `
     <!-- Header -->
     <div>
-      <h2 class="text-base font-bold text-gray-900">Edukasi & Privasi</h2>
-      <p class="text-xs text-gray-500">Pemahaman berbasis bukti klinis & perlindungan data pribadi</p>
+      <h2 class="text-base font-bold text-gray-900">Edukasi, Pengaturan & Privasi</h2>
+      <p class="text-xs text-gray-500">Pemahaman klinis, perlindungan data pribadi & setelan aplikasi</p>
     </div>
 
     <!-- Mandatory Medical Guardrail Banner -->
@@ -25,6 +26,36 @@ export function renderEducationPage({ onResetApp }) {
       <p class="leading-relaxed">
         HaidKu tidak pernah menyatakan adanya "hari aman" atau "100% bebas risiko". Sel sperma dapat bertahan 3–5 hari di dalam saluran reproduksi wanita, dan ovulasi dapat bergeser secara alami. Prediksi kalender dan masa subur adalah estimasi edukatif, bukan konfirmasi ovulasi ataupun alat kontrasepsi yang disetujui tanpa konseling tenaga medis.
       </p>
+    </div>
+
+    <!-- PWA Install Card (Ditampilkan bila browser mendukung PWA Install) -->
+    <div id="pwa-install-card" class="hidden bg-gradient-to-r from-rose-500 to-rose-600 rounded-2xl p-4 text-white shadow-sm flex items-center justify-between">
+      <div>
+        <h3 class="text-xs font-bold leading-tight">Pasang Aplikasi HaidKu</h3>
+        <p class="text-[11px] text-rose-100">Akses cepat dari layar utama & berfungsi offline.</p>
+      </div>
+      <button id="btn-install-pwa" class="btn-tap px-3 py-1.5 bg-white text-rose-600 text-xs font-bold rounded-xl shadow-xs active:scale-95 transition-all">
+        Pasang
+      </button>
+    </div>
+
+    <!-- Pengaturan Notifikasi & Pengingat Privasi (T20, T28, T29) -->
+    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-xs space-y-3">
+      <div class="flex items-center space-x-2">
+        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        <h3 class="text-sm font-bold text-gray-900">Pengingat Siklus & Privasi</h3>
+      </div>
+      <p class="text-xs text-gray-600 leading-relaxed">
+        Notifikasi dikirim dengan teks netral (*"Pengingat HaidKu"*) pada layar kunci agar privasi kesehatan reproduksi Anda terjaga.
+      </p>
+
+      <div class="pt-2 space-y-2">
+        <button id="btn-request-notif" class="btn-tap w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2.5 px-4 rounded-xl border border-rose-200 transition-colors flex items-center justify-center space-x-2 text-xs">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          <span id="notif-status-label">Aktifkan Izin Notifikasi</span>
+        </button>
+        <p class="text-[10px] text-gray-400">Jika izin ditolak browser, pengingat tetap tersimpan di Kotak Masuk aplikasi.</p>
+      </div>
     </div>
 
     <!-- Educational Articles List -->
@@ -60,10 +91,45 @@ export function renderEducationPage({ onResetApp }) {
     <!-- App Info Footer -->
     <div class="text-center text-[11px] text-gray-400 pt-2 pb-6 space-y-1">
       <p class="font-bold text-gray-500">HaidKu v1.0.0</p>
-      <p>PWA & Hybrid Android/iOS • PHP 8.3 Native API</p>
+      <p>PWA Offline-First • PHP 8.3 Native API</p>
       <p>© 2026 HaidKu. Hak Cipta Dilindungi.</p>
     </div>
   `;
+
+  // Cek PWA deferred prompt
+  if (window.deferredPrompt) {
+    const pwaCard = container.querySelector('#pwa-install-card');
+    pwaCard.classList.remove('hidden');
+    container.querySelector('#btn-install-pwa').addEventListener('click', async () => {
+      window.deferredPrompt.prompt();
+      const choice = await window.deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') {
+        pwaCard.classList.add('hidden');
+      }
+      window.deferredPrompt = null;
+    });
+  }
+
+  // Notif status
+  const notifLabel = container.querySelector('#notif-status-label');
+  if (notificationAdapter.isSupported()) {
+    if (Notification.permission === 'granted') {
+      notifLabel.textContent = 'Izin Notifikasi Aktif';
+    } else if (Notification.permission === 'denied') {
+      notifLabel.textContent = 'Izin Ditolak (Menggunakan Kotak Masuk)';
+    }
+  }
+
+  container.querySelector('#btn-request-notif').addEventListener('click', async () => {
+    const perm = await notificationAdapter.requestPermission();
+    if (perm === 'granted') {
+      notifLabel.textContent = 'Izin Notifikasi Aktif';
+      if (onToast) onToast('Izin notifikasi berhasil diaktifkan');
+    } else {
+      notifLabel.textContent = 'Izin Ditolak (Menggunakan Kotak Masuk)';
+      if (onToast) onToast('Notifikasi akan disimpan di Kotak Masuk aplikasi');
+    }
+  });
 
   // Load articles
   apiAdapter.getEducationalArticles().then((articles) => {
@@ -117,4 +183,3 @@ export function renderEducationPage({ onResetApp }) {
 
   return container;
 }
-

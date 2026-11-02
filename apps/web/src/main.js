@@ -5,12 +5,15 @@
 
 import { offlineStore } from './storage/offlineStore.js';
 import { apiAdapter } from './adapters/apiAdapter.js';
+import { syncEngine } from './storage/syncEngine.js';
+import { notificationAdapter } from './adapters/notificationAdapter.js';
 import { CycleEngine } from './domain/CycleEngine.js';
 import { renderHeader } from './components/Header.js';
 import { renderBottomNav } from './components/BottomNav.js';
 import { openPeriodModal } from './components/PeriodModal.js';
 import { openOnboardingModal } from './components/OnboardingModal.js';
 import { openSDMConsentModal } from './components/SDMConsentModal.js';
+import { openInboxModal } from './components/InboxModal.js';
 import { renderDashboardPage } from './pages/DashboardPage.js';
 import { renderCalendarPage } from './pages/CalendarPage.js';
 import { renderHistoryPage } from './pages/HistoryPage.js';
@@ -27,27 +30,38 @@ class HaidKuApp {
   }
 
   async init() {
-    // 1. Inisialisasi offline store
+    // 1. Tangkap event install PWA
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      if (this.activeTab === 'education') {
+        this.render();
+      }
+    });
+
+    // 2. Inisialisasi offline store
     await offlineStore.initDB();
     this.settings = await offlineStore.getSettings();
 
-    // 2. Muat data periode & hitung statistik
+    // 3. Muat data periode & hitung statistik
     await this.loadData();
 
-    // 3. Register Service Worker untuk PWA
+    // 4. Register Service Worker untuk PWA
     this.registerServiceWorker();
 
-    // 4. Render tampilan
+    // 5. Evaluasi pengingat siklus (T20, T28, T29)
+    notificationAdapter.evaluateReminders(this.stats, this.settings);
+
+    // 6. Render tampilan
     this.render();
 
-    // 5. Cek onboarding untuk pengguna baru
+    // 7. Cek onboarding untuk pengguna baru
     if (!this.settings.onboardingCompleted) {
       openOnboardingModal({
         onComplete: async (result) => {
           await offlineStore.saveSettings(result);
           this.settings = await offlineStore.getSettings();
 
-          // Jika pengguna memasukkan tanggal haid terakhir pada onboarding
           if (result.lastPeriodDate) {
             await this.handleSavePeriod({
               start_date: result.lastPeriodDate,
@@ -121,8 +135,17 @@ class HaidKuApp {
   render() {
     this.appRoot.innerHTML = '';
 
-    // 1. Header Sticky
-    const header = renderHeader(() => this.openAddModal());
+    // 1. Header Sticky dengan Inbox Bell & Unread Counter
+    const unreadCount = notificationAdapter.getUnreadCount();
+    const header = renderHeader({
+      onOpenAddModal: () => this.openAddModal(),
+      onOpenInbox: () => {
+        openInboxModal({
+          onClosed: () => this.render(),
+        });
+      },
+      unreadCount,
+    });
     this.appRoot.appendChild(header);
 
     // 2. Main Page Container
@@ -147,7 +170,6 @@ class HaidKuApp {
                   });
                   this.settings = await offlineStore.getSettings();
 
-                  // Coba kirim acknowledgement ke API jika online
                   if (navigator.onLine) {
                     try {
                       await fetch('./api/v1/acknowledgements', {
@@ -217,6 +239,7 @@ class HaidKuApp {
               this.activeTab = 'dashboard';
               this.render();
             },
+            onToast: (msg) => this.showToast(msg),
           })
         );
         break;
@@ -254,4 +277,3 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = new HaidKuApp();
   app.init();
 });
-

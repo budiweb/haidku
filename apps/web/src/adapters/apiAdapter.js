@@ -1,9 +1,11 @@
 /**
  * apiAdapter.js — Unified data adapter
- * Offline-first: Reads/writes to local store immediately, then synchronizes with backend if online.
+ * Offline-first: Reads/writes to local store immediately, enqueues mutations into syncEngine,
+ * and synchronizes with backend if online.
  */
 
 import { offlineStore } from '../storage/offlineStore.js';
+import { syncEngine } from '../storage/syncEngine.js';
 import { CycleEngine } from '../domain/CycleEngine.js';
 
 class ApiAdapter {
@@ -30,27 +32,17 @@ class ApiAdapter {
   }
 
   async getPeriods() {
-    // 1. Ambil data lokal terlebih dahulu untuk instant mobile speed
+    // 1. Ambil data lokal terlebih dahulu untuk instant mobile responsiveness
     const localData = await offlineStore.getPeriods();
 
-    // 2. Jika online, coba perbarui dari server
+    // 2. Jika online, coba sinkronkan data baru
     if (navigator.onLine) {
       try {
-        const res = await fetch(`${this.apiBase}/periods`, {
-          headers: this._getHeaders(),
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.status === 'success' && Array.isArray(json.data)) {
-            // Jika server punya data, perbarui local store
-            for (const item of json.data) {
-              await offlineStore.savePeriod(item);
-            }
-            return await offlineStore.getPeriods();
-          }
-        }
+        await syncEngine.flushQueue();
+        await syncEngine.pullChanges();
+        return await offlineStore.getPeriods();
       } catch (e) {
-        // Mode offline fallback normal
+        // Fallback ke data lokal
       }
     }
 
@@ -61,24 +53,8 @@ class ApiAdapter {
     // 1. Simpan di local store (IndexedDB)
     const savedLocal = await offlineStore.savePeriod(data);
 
-    // 2. Sinkronkan ke server bila online
-    if (navigator.onLine) {
-      try {
-        const res = await fetch(`${this.apiBase}/periods`, {
-          method: 'POST',
-          headers: this._getHeaders(),
-          body: JSON.stringify(savedLocal),
-        });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.status === 'success') {
-            return json.data;
-          }
-        }
-      } catch (e) {
-        // Tetap sukses secara lokal, antre sinkronisasi
-      }
-    }
+    // 2. Masukkan ke antrean mutasi offline sync (T21, T27)
+    await syncEngine.enqueueMutation('period', data.id ? 'update' : 'create', savedLocal);
 
     return savedLocal;
   }
@@ -87,17 +63,8 @@ class ApiAdapter {
     // 1. Hapus lokal
     await offlineStore.deletePeriod(id);
 
-    // 2. Hapus di server bila online
-    if (navigator.onLine) {
-      try {
-        await fetch(`${this.apiBase}/periods/${encodeURIComponent(id)}`, {
-          method: 'DELETE',
-          headers: this._getHeaders(),
-        });
-      } catch (e) {
-        // offline
-      }
-    }
+    // 2. Masukkan ke antrean mutasi delete
+    await syncEngine.enqueueMutation('period', 'delete', { id });
 
     return true;
   }
@@ -108,7 +75,6 @@ class ApiAdapter {
   }
 
   async getEducationalArticles() {
-    // Fallback lokal jika offline
     const fallbackArticles = [
       {
         id: 'art-01',
@@ -152,4 +118,3 @@ class ApiAdapter {
 }
 
 export const apiAdapter = new ApiAdapter();
-

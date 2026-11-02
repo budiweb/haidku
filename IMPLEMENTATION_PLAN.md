@@ -72,12 +72,15 @@
 - [x] Endpoint `GET /api/v1/fertility/sdm-status`.
 - [x] Audit teks medis: eliminasi semua janji 100%/0%/pasti aman. Skenario test T01–T23 lulus 100%.
 
-### Sprint 4 — PWA Offline, Sync Idempotent & Privasi
-- [ ] Service worker caching offline app shell (tanpa membocorkan respon API sensitif).
-- [ ] Offline mutation queue dengan `client_mutation_id` dan `record_version`.
-- [ ] Opt-in sync antar perangkat via Email OTP.
-- [ ] Ekspor data (JSON/CSV) dan penghapusan data permanen (right to erasure).
-- [ ] In-app notification fallback dan Web Push aman (tanpa label sensitif di lock screen).
+### Sprint 4 — PWA Offline, Sync Idempotent & Privasi (SELESAI)
+- [x] Service worker caching offline app shell (`apps/web/public/sw.js` tanpa membocorkan respon API sensitif).
+- [x] Offline mutation queue dengan `client_mutation_id` dan `record_version` (`syncEngine.js` & `SyncRepository.php`).
+- [x] Endpoint `POST /api/v1/sync/push` & `GET /api/v1/sync/pull` dengan deduplikasi dan deteksi konflik `VERSION_CONFLICT` (T21, T26, T27).
+- [x] Enkripsi data sensitif lokal berbasis Web Crypto AES-GCM 256-bit (`cryptoHelper.js`).
+- [x] In-app notification center & fallback inbox (`notificationAdapter.js` & `InboxModal.js` - T28).
+- [x] Privacy-safe notification format pada layar kunci (T20, T29 - tanpa terminologi reproduksi/tanggal haid).
+- [x] PWA installable flow (`beforeinstallprompt` prompt listener & install banner).
+- [x] Ekspor data (JSON) dan penghapusan data permanen (right to erasure UU No. 27/2022 PDP).
 
 ### Sprint 5 & 6 — Hybrid Android & iOS (Capacitor)
 - [ ] Konfigurasi Capacitor dengan `webDir: apps/web/dist`.
