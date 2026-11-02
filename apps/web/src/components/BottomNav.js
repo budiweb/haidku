@@ -57,3 +57,4 @@ export function renderBottomNav(activeTab = 'dashboard', onTabChange) {
 
   return nav;
 }
+

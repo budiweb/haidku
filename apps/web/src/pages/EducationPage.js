@@ -117,3 +117,4 @@ export function renderEducationPage({ onResetApp }) {
 
   return container;
 }
+

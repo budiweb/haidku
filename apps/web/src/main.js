@@ -10,6 +10,7 @@ import { renderHeader } from './components/Header.js';
 import { renderBottomNav } from './components/BottomNav.js';
 import { openPeriodModal } from './components/PeriodModal.js';
 import { openOnboardingModal } from './components/OnboardingModal.js';
+import { openSDMConsentModal } from './components/SDMConsentModal.js';
 import { renderDashboardPage } from './pages/DashboardPage.js';
 import { renderCalendarPage } from './pages/CalendarPage.js';
 import { renderHistoryPage } from './pages/HistoryPage.js';
@@ -134,7 +135,40 @@ class HaidKuApp {
           renderDashboardPage({
             stats: this.stats,
             periods: this.periods,
+            settings: this.settings,
             onOpenAddModal: () => this.openAddModal(),
+            onOpenSDMConsent: () => {
+              openSDMConsentModal({
+                onConsentGiven: async () => {
+                  await offlineStore.saveSettings({
+                    goal: 'avoid',
+                    sdmConsent: true,
+                    sdm_consent_at: new Date().toISOString(),
+                  });
+                  this.settings = await offlineStore.getSettings();
+
+                  // Coba kirim acknowledgement ke API jika online
+                  if (navigator.onLine) {
+                    try {
+                      await fetch('./api/v1/acknowledgements', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'X-Guest-Id': localStorage.getItem('haidku_guest_id') || 'guest_default',
+                        },
+                        body: JSON.stringify({
+                          type: 'sdm_risk_acknowledgement',
+                          version: '1.0',
+                        }),
+                      });
+                    } catch (e) {}
+                  }
+
+                  this.showToast('Mode Standard Days Method aktif');
+                  this.render();
+                },
+              });
+            },
             onNavigate: (tab) => {
               this.activeTab = tab;
               this.render();
@@ -220,3 +254,4 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = new HaidKuApp();
   app.init();
 });
+

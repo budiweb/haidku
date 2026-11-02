@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace HaidKu\Services;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use InvalidArgumentException;
 
 class CycleCalculatorService
 {
     /**
-     * T01: Menghitung panjang siklus dari hari pertama dua haid berurutan.
+     * T01: Menghitung selisih hari kalender murni YYYY-MM-DD.
+     * Tidak terpengaruh offset jam/UTC.
      * Contoh: 1 Jan -> 29 Jan = 28 hari.
      */
     public function calculateDaysBetween(string $startDate1, string $startDate2): int
@@ -45,29 +47,35 @@ class CycleCalculatorService
     }
 
     /**
-     * Menghitung hari ke-N dari siklus berjalan.
-     * Formula: date_diff(today, latest_confirmed_day_1) + 1
+     * T16: Menghitung hari ke-N dari siklus berjalan dengan zona waktu pengguna.
+     * Formula: date_diff(today_local, latest_confirmed_day_1) + 1
      */
-    public function calculateCurrentCycleDay(string $latestConfirmedDay1, ?string $today = null): int
+    public function calculateCurrentCycleDay(string $latestConfirmedDay1, ?string $today = null, string $timezone = 'Asia/Jakarta'): int
     {
-        $todayStr = $today ?? (new DateTimeImmutable())->format('Y-m-d');
-        $days = $this->calculateDaysBetween($latestConfirmedDay1, $todayStr);
+        if ($today !== null) {
+            $todayStr = $today;
+        } else {
+            $tz = new DateTimeZone($timezone);
+            $todayStr = (new DateTimeImmutable('now', $tz))->format('Y-m-d');
+        }
 
+        $days = $this->calculateDaysBetween($latestConfirmedDay1, $todayStr);
         return $days >= 0 ? $days + 1 : 0;
     }
 
     /**
-     * Menghitung statistik siklus lengkap dari kumpulan riwayat periode.
-     * Aturan:
-     * - Flek/spotting tidak dihitung sebagai Day 1 siklus.
-     * - Siklus dihitung dari start_date dua haid berurutan.
-     * - Periode yang masih berlangsung tidak dipakai sebagai akhir siklus tertutup.
+     * Menghitung statistik siklus lengkap dari kumpulan riwayat periode (hingga 6 siklus terbaru).
      */
-    public function computeCycleStats(array $periods, ?string $today = null): array
+    public function computeCycleStats(array $periods, ?string $today = null, string $timezone = 'Asia/Jakarta'): array
     {
-        $todayStr = $today ?? (new DateTimeImmutable())->format('Y-m-d');
+        if ($today !== null) {
+            $todayStr = $today;
+        } else {
+            $tz = new DateTimeZone($timezone);
+            $todayStr = (new DateTimeImmutable('now', $tz))->format('Y-m-d');
+        }
 
-        // Filter periode menstruasi yang sah (bukan spotting murni)
+        // T11: Filter periode menstruasi sah (flek/spotting tidak dihitung sebagai Day 1)
         $validPeriods = array_values(array_filter($periods, function ($p) {
             $bleeding = $p['bleeding_type'] ?? 'period';
             return $bleeding === 'period' && ($p['status'] ?? 'confirmed') === 'confirmed';
@@ -79,6 +87,7 @@ class CycleCalculatorService
         });
 
         $cycleLengths = [];
+        $cycleStartDates = [];
         $periodDurations = [];
 
         // Hitung durasi darah haid tiap catatan
@@ -95,24 +104,27 @@ class CycleCalculatorService
             }
         }
 
-        // Hitung panjang siklus antar start_date berurutan
+        // Hitung panjang siklus antar start_date berurutan (ambil maksimal 6 siklus)
         $count = count($validPeriods);
-        for ($i = 0; $i < $count - 1; $i++) {
+        $maxCyclesToAnalyze = min($count - 1, 6);
+        for ($i = 0; $i < $maxCyclesToAnalyze; $i++) {
             $newerStart = $validPeriods[$i]['start_date'];
             $olderStart = $validPeriods[$i + 1]['start_date'];
             $diff = $this->calculateDaysBetween($olderStart, $newerStart);
 
-            // Siklus fisiologis wajar antara 15 sampai 90 hari
+            // Rentang fisiologis wajar
             if ($diff >= 15 && $diff <= 90) {
                 $cycleLengths[] = $diff;
+                $cycleStartDates[] = $newerStart;
             }
         }
 
-        $medianCycle = null;
+        $medianCycle = 28;
         $avgCycle = null;
         $minCycle = null;
         $maxCycle = null;
         $cycleVariation = 0;
+        $isIrregular = false;
 
         if (count($cycleLengths) > 0) {
             $sorted = $cycleLengths;
@@ -124,9 +136,11 @@ class CycleCalculatorService
             $minCycle = $sorted[0];
             $maxCycle = $sorted[$n - 1];
             $cycleVariation = $maxCycle - $minCycle;
-        } else {
-            // Default referensi edukasi 28 hari jika belum ada 2 riwayat
-            $medianCycle = 28;
+
+            // Jika variasi siklus > 8 hari, tandai sebagai bervariasi/irregular
+            if ($cycleVariation > 8) {
+                $isIrregular = true;
+            }
         }
 
         $avgPeriodDuration = count($periodDurations) > 0
@@ -136,6 +150,8 @@ class CycleCalculatorService
         $latestPeriod = $validPeriods[0] ?? null;
         $currentCycleDay = 0;
         $predictedNextPeriod = null;
+        $predictedRangeStart = null;
+        $predictedRangeEnd = null;
         $estimatedOvulationDate = null;
         $fertileWindowStart = null;
         $fertileWindowEnd = null;
@@ -143,18 +159,29 @@ class CycleCalculatorService
 
         if ($latestPeriod !== null) {
             $latestStart = $latestPeriod['start_date'];
-            $currentCycleDay = $this->calculateCurrentCycleDay($latestStart, $todayStr);
+            $currentCycleDay = $this->calculateCurrentCycleDay($latestStart, $todayStr, $timezone);
 
-            // Prediksi haid berikutnya = start terakhir + median
             $latestDateObj = new DateTimeImmutable($latestStart);
+
+            // Prediksi dasar
             $predDateObj = $latestDateObj->modify("+{$medianCycle} days");
             $predictedNextPeriod = $predDateObj->format('Y-m-d');
+
+            // Rentang ketidakpastian bila variasi ada
+            if ($cycleVariation > 0) {
+                $halfVar = (int)ceil($cycleVariation / 2);
+                $predictedRangeStart = $predDateObj->modify("-{$halfVar} days")->format('Y-m-d');
+                $predictedRangeEnd = $predDateObj->modify("+{$halfVar} days")->format('Y-m-d');
+            } else {
+                $predictedRangeStart = $predictedNextPeriod;
+                $predictedRangeEnd = $predictedNextPeriod;
+            }
 
             // Estimasi ovulasi edukatif = prediksi haid berikutnya - 14 hari
             $ovDateObj = $predDateObj->modify("-14 days");
             $estimatedOvulationDate = $ovDateObj->format('Y-m-d');
 
-            // Jendela subur edukatif: -5 s.d. +1 hari dari perkiraan ovulasi
+            // Jendela subur edukatif: -5 s.d. +1 hari dari estimasi ovulasi
             $fertileWindowStart = $ovDateObj->modify("-5 days")->format('Y-m-d');
             $fertileWindowEnd = $ovDateObj->modify("+1 day")->format('Y-m-d');
 
@@ -165,15 +192,19 @@ class CycleCalculatorService
             'valid_periods_count'     => count($validPeriods),
             'completed_cycles_count'  => count($cycleLengths),
             'cycle_lengths'           => $cycleLengths,
+            'cycle_start_dates'       => $cycleStartDates,
             'median_cycle_length'     => $medianCycle,
             'average_cycle_length'    => $avgCycle,
             'min_cycle_length'        => $minCycle,
             'max_cycle_length'        => $maxCycle,
             'cycle_variation_days'    => $cycleVariation,
+            'is_irregular'            => $isIrregular,
             'average_period_duration' => $avgPeriodDuration,
             'latest_period'           => $latestPeriod,
             'current_cycle_day'       => $currentCycleDay,
             'predicted_next_period'   => $predictedNextPeriod,
+            'predicted_range_start'   => $predictedRangeStart,
+            'predicted_range_end'     => $predictedRangeEnd,
             'estimated_ovulation'     => $estimatedOvulationDate,
             'fertile_window_start'    => $fertileWindowStart,
             'fertile_window_end'      => $fertileWindowEnd,

@@ -6,6 +6,7 @@ echo "   HaidKu PHP Automated Test Suite      \n";
 echo "========================================\n\n";
 
 require_once __DIR__ . '/CycleCalculatorTest.php';
+require_once __DIR__ . '/SDMTest.php';
 require_once __DIR__ . '/PeriodApiTest.php';
 
 $t1 = new CycleCalculatorTest();
@@ -13,11 +14,16 @@ $res1 = $t1->run();
 
 echo "\n----------------------------------------\n";
 
-$t2 = new PeriodApiTest();
+$t2 = new SDMTest();
 $res2 = $t2->run();
 
+echo "\n----------------------------------------\n";
+
+$t3 = new PeriodApiTest();
+$res3 = $t3->run();
+
 echo "\n========================================\n";
-if ($res1 && $res2) {
+if ($res1 && $res2 && $res3) {
     echo "SEMUA TEST PHP LULUS (100% SUKSES)!\n";
     exit(0);
 } else {

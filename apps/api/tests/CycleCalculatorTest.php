@@ -77,3 +77,4 @@ class CycleCalculatorTest
         return $this->failed === 0;
     }
 }
+

@@ -5,11 +5,13 @@ require_once __DIR__ . '/../src/Config/Database.php';
 require_once __DIR__ . '/../src/Middleware/CorsMiddleware.php';
 require_once __DIR__ . '/../src/Middleware/AuthMiddleware.php';
 require_once __DIR__ . '/../src/Services/CycleCalculatorService.php';
+require_once __DIR__ . '/../src/Services/SDMService.php';
 require_once __DIR__ . '/../src/Repositories/PeriodRepository.php';
 require_once __DIR__ . '/../src/Repositories/UserRepository.php';
 require_once __DIR__ . '/../src/Controllers/PeriodController.php';
 require_once __DIR__ . '/../src/Controllers/UserController.php';
 require_once __DIR__ . '/../src/Controllers/ArticleController.php';
+require_once __DIR__ . '/../src/Controllers/FertilityController.php';
 require_once __DIR__ . '/../src/Router.php';
 
 // Muat .env jika ada
@@ -36,10 +38,12 @@ $db = \HaidKu\Config\Database::getConnection();
 $periodRepo = new \HaidKu\Repositories\PeriodRepository($db);
 $userRepo = new \HaidKu\Repositories\UserRepository($db);
 $cycleCalculator = new \HaidKu\Services\CycleCalculatorService();
+$sdmService = new \HaidKu\Services\SDMService();
 
 $periodController = new \HaidKu\Controllers\PeriodController($periodRepo, $cycleCalculator);
 $userController = new \HaidKu\Controllers\UserController($userRepo);
 $articleController = new \HaidKu\Controllers\ArticleController($db);
+$fertilityController = new \HaidKu\Controllers\FertilityController($periodRepo, $userRepo, $cycleCalculator, $sdmService, $db);
 
 $router = new \HaidKu\Router();
 
@@ -67,6 +71,11 @@ $router->add('DELETE', '/api/v1/periods/{id}', [$periodController, 'destroy']);
 $router->add('GET', '/api/v1/cycles/summary', [$periodController, 'summary']);
 $router->add('GET', '/api/v1/cycles/calendar', [$periodController, 'calendar']);
 
+// Fertility & Standard Days Method (SDM)
+$router->add('GET', '/api/v1/fertility/estimate', [$fertilityController, 'estimate']);
+$router->add('GET', '/api/v1/fertility/sdm-status', [$fertilityController, 'sdmStatus']);
+$router->add('POST', '/api/v1/acknowledgements', [$fertilityController, 'acknowledge']);
+
 // Educational Articles
 $router->add('GET', '/api/v1/educational-articles', [$articleController, 'index']);
 
@@ -77,3 +86,4 @@ $router->add('GET', '/api/v1/export', [$userController, 'export']);
 $router->add('DELETE', '/api/v1/me/data', [$userController, 'deleteData']);
 
 return $router;
+

@@ -10,3 +10,4 @@
     # Alihkan semua request lain ke index.php
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
+

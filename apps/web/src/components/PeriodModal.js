@@ -238,3 +238,4 @@ export function openPeriodModal({ period = null, defaultDate = null, onSave, onD
     }
   });
 }
+

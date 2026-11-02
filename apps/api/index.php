@@ -19,3 +19,4 @@ try {
         'message' => 'Terjadi kesalahan internal server: ' . $e->getMessage(),
     ], JSON_UNESCAPED_UNICODE);
 }
+

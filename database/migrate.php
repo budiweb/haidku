@@ -95,3 +95,4 @@ try {
     echo "\n[ERROR] Migrasi gagal: " . $e->getMessage() . "\n";
     exit(1);
 }
+

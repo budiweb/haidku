@@ -114,3 +114,4 @@ class PeriodApiTest
         return $this->failed === 0;
     }
 }
+

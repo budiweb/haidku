@@ -26,16 +26,14 @@ class UserRepository
                  VALUES (:id, :email, 'Asia/Jakarta', 'id_ID')"
             );
             $stmtIns->execute([':id' => $userId, ':email' => $email]);
-
-            // Buat settings default
-            $stmtSet = $this->db->prepare(
-                "INSERT INTO user_settings (user_id, goal, notification_enabled, notification_privacy_mode, sync_opt_in)
-                 VALUES (:id, 'track', 0, 'private', 0)"
-            );
-            $stmtSet->execute([':id' => $userId]);
-
-            return $this->getUserWithSettings($userId);
         }
+
+        // Pastikan row user_settings selalu ada
+        $stmtSet = $this->db->prepare(
+            "INSERT IGNORE INTO user_settings (user_id, goal, notification_enabled, notification_privacy_mode, sync_opt_in)
+             VALUES (:id, 'track', 0, 'private', 0)"
+        );
+        $stmtSet->execute([':id' => $userId]);
 
         return $this->getUserWithSettings($userId);
     }
@@ -167,3 +165,4 @@ class UserRepository
         }
     }
 }
+

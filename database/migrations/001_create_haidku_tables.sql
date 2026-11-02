@@ -147,3 +147,4 @@ CREATE TABLE IF NOT EXISTS security_audit_events (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+

@@ -117,3 +117,4 @@ export function renderStatsPage({ stats, periods = [] }) {
 
   return container;
 }
+

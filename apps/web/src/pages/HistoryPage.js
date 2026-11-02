@@ -146,3 +146,4 @@ export function renderHistoryPage({ periods = [], onOpenAddModal, onEditPeriod, 
 
   return container;
 }
+

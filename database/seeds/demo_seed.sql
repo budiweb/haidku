@@ -37,3 +37,4 @@ VALUES
     'published'
 )
 ON DUPLICATE KEY UPDATE title = VALUES(title), body = VALUES(body);
+

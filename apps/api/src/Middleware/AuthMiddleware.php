@@ -34,3 +34,4 @@ class AuthMiddleware
         return 'guest-default-profile';
     }
 }
+

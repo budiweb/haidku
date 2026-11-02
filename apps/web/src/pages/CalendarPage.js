@@ -224,3 +224,4 @@ export function renderCalendarPage({ periods = [], stats, onOpenAddModal, onEdit
   renderView();
   return container;
 }
+

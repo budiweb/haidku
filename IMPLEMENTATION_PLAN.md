@@ -57,17 +57,20 @@
 - [x] REST API Period CRUD di `apps/api/src/Controllers/PeriodController.php`.
 - [x] Verifikasi build frontend, tes API, uji tanggal kabisat & selisih kalender.
 
-### Sprint 2 — Perhitungan Siklus & Subur Edukatif
-- [ ] Domain engine `CycleCalculator.js` dan `PeriodForecast.js` (pure functions + fixture test).
-- [ ] Perkiraan ovulasi (14 hari sebelum prediksi haid) & jendela subur edukatif (-5 s.d. +1).
-- [ ] Tampilan rentang ketidakpastian dan peringatan bahwa prediksi bukan diagnosis ovulasi.
-- [ ] Sinkronisasi fixture tests antara backend PHP dan frontend JS.
+### Sprint 2 — Perhitungan Siklus & Subur Edukatif (SELESAI)
+- [x] Domain engine `CycleCalculator.js` dan `CycleCalculatorService.php` (pure functions + fixture test).
+- [x] Perkiraan ovulasi (14 hari sebelum prediksi haid) & jendela subur edukatif (-5 s.d. +1).
+- [x] Tampilan rentang ketidakpastian dan peringatan bahwa prediksi bukan diagnosis ovulasi.
+- [x] Sinkronisasi fixture tests antara backend PHP dan frontend JS (100% parity).
+- [x] Endpoint `GET /api/v1/fertility/estimate`.
+- [x] Pengujian tahun kabisat (T17), zona waktu WIB/WITA (T16), dan perubahan riwayat masa lalu (T14).
 
-### Sprint 3 — Standard Days Method (SDM)
-- [ ] Consent flow & informed acknowledgment untuk pengguna dengan tujuan menghindari kehamilan.
-- [ ] Validasi kelayakan konservatif (siklus 26–32 hari, minimal 3 riwayat valid, <2 anomali dalam 365 hari, tanpa kontraindikasi/risk override).
-- [ ] State machine: `HIGHER_FERTILITY_PRECAUTION` (hari 8–19), `LOWER_CHANCE_NOT_ZERO` (hari 1–7 & 20–32), `UNKNOWN` (tidak eligible/data kurang/hari >32).
-- [ ] Audit teks medis: eliminasi semua janji 100%/0%/pasti aman. Skenario test T01–T23.
+### Sprint 3 — Standard Days Method (SDM) (SELESAI)
+- [x] Consent flow & informed acknowledgment untuk pengguna dengan tujuan menghindari kehamilan (`SDMConsentModal.js` & `POST /api/v1/acknowledgements`).
+- [x] Validasi kelayakan konservatif (`SDMService.php` & `SDMEngine.js`): siklus 26–32 hari, minimal 3 riwayat valid (T10), <2 anomali dalam 365 hari (T09), tanpa kontraindikasi/risk override (T13, T18).
+- [x] State machine: `HIGHER_FERTILITY_PRECAUTION` (hari 8–19), `LOWER_CHANCE_NOT_ZERO` (hari 1–7 & 20–32), `UNKNOWN` (tidak eligible/data kurang/hari >32).
+- [x] Endpoint `GET /api/v1/fertility/sdm-status`.
+- [x] Audit teks medis: eliminasi semua janji 100%/0%/pasti aman. Skenario test T01–T23 lulus 100%.
 
 ### Sprint 4 — PWA Offline, Sync Idempotent & Privasi
 - [ ] Service worker caching offline app shell (tanpa membocorkan respon API sensitif).
@@ -99,3 +102,4 @@
 3. Unit test & integration test dieksekusi dengan hasil 100% lulus.
 4. UI responsif pada viewport mobile (320px–430px) dan desktop, dengan target sentuh >= 44px.
 5. Catatan riwayat dan laporan diverifikasi secara jujur.
+

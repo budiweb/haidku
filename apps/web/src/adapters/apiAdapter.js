@@ -152,3 +152,4 @@ class ApiAdapter {
 }
 
 export const apiAdapter = new ApiAdapter();
+

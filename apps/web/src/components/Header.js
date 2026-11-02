@@ -32,3 +32,4 @@ export function renderHeader(onOpenAddModal) {
   header.querySelector('#btn-quick-add').addEventListener('click', onOpenAddModal);
   return header;
 }
+
