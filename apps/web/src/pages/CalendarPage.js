@@ -2,7 +2,7 @@
  * CalendarPage.js — Interactive monthly calendar with accessible legend & tap-to-log
  */
 
-export function renderCalendarPage({ periods = [], stats, onOpenAddModal, onEditPeriod }) {
+export function renderCalendarPage({ periods = [], stats, onOpenAddModal, onOpenSymptomModal, onEditPeriod }) {
   const container = document.createElement('div');
   container.className = 'p-4 space-y-4 fade-in';
 
@@ -146,6 +146,21 @@ export function renderCalendarPage({ periods = [], stats, onOpenAddModal, onEdit
     gridCard.innerHTML = gridHTML;
     container.appendChild(gridCard);
 
+    // Quick Actions Bar
+    const actionsBar = document.createElement('div');
+    actionsBar.className = 'grid grid-cols-2 gap-2';
+    actionsBar.innerHTML = `
+      <button id="cal-quick-period" class="btn-tap bg-rose-500 hover:bg-rose-600 text-white font-bold py-2.5 px-3 rounded-xl shadow-xs text-xs flex items-center justify-center space-x-1.5 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+        <span>+ Catat Haid</span>
+      </button>
+      <button id="cal-quick-symptom" class="btn-tap bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 font-bold py-2.5 px-3 rounded-xl shadow-xs text-xs flex items-center justify-center space-x-1.5 transition-all">
+        <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Catat Gejala</span>
+      </button>
+    `;
+    container.appendChild(actionsBar);
+
     // Explicit Text Legend
     const legendCard = document.createElement('div');
     legendCard.className = 'bg-white p-4 rounded-xl border border-gray-100 text-xs space-y-2 shadow-xs';
@@ -184,6 +199,11 @@ export function renderCalendarPage({ periods = [], stats, onOpenAddModal, onEdit
     container.appendChild(legendCard);
 
     // Event listeners
+    actionsBar.querySelector('#cal-quick-period').addEventListener('click', () => onOpenAddModal());
+    actionsBar.querySelector('#cal-quick-symptom').addEventListener('click', () => {
+      if (typeof onOpenSymptomModal === 'function') onOpenSymptomModal();
+    });
+
     headerDiv.querySelector('#cal-prev').addEventListener('click', () => {
       currentMonth--;
       if (currentMonth < 0) {

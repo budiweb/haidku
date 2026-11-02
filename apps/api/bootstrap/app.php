@@ -9,11 +9,13 @@ require_once __DIR__ . '/../src/Services/SDMService.php';
 require_once __DIR__ . '/../src/Repositories/PeriodRepository.php';
 require_once __DIR__ . '/../src/Repositories/UserRepository.php';
 require_once __DIR__ . '/../src/Repositories/SyncRepository.php';
+require_once __DIR__ . '/../src/Repositories/SymptomRepository.php';
 require_once __DIR__ . '/../src/Controllers/PeriodController.php';
 require_once __DIR__ . '/../src/Controllers/UserController.php';
 require_once __DIR__ . '/../src/Controllers/ArticleController.php';
 require_once __DIR__ . '/../src/Controllers/FertilityController.php';
 require_once __DIR__ . '/../src/Controllers/SyncController.php';
+require_once __DIR__ . '/../src/Controllers/SymptomController.php';
 require_once __DIR__ . '/../src/Router.php';
 
 // Muat .env jika ada
@@ -48,6 +50,7 @@ $userController = new \HaidKu\Controllers\UserController($userRepo);
 $articleController = new \HaidKu\Controllers\ArticleController($db);
 $fertilityController = new \HaidKu\Controllers\FertilityController($periodRepo, $userRepo, $cycleCalculator, $sdmService, $db);
 $syncController = new \HaidKu\Controllers\SyncController($syncRepo, $userRepo);
+$symptomController = new \HaidKu\Controllers\SymptomController();
 
 $router = new \HaidKu\Router();
 
@@ -70,6 +73,12 @@ $router->add('GET', '/api/v1/periods/{id}', [$periodController, 'show']);
 $router->add('PATCH', '/api/v1/periods/{id}', [$periodController, 'update']);
 $router->add('PUT', '/api/v1/periods/{id}', [$periodController, 'update']);
 $router->add('DELETE', '/api/v1/periods/{id}', [$periodController, 'destroy']);
+
+// Daily symptoms & body observations (ERD daily_symptoms)
+$router->add('GET', '/api/v1/symptoms', [$symptomController, 'list']);
+$router->add('POST', '/api/v1/symptoms', [$symptomController, 'upsert']);
+$router->add('GET', '/api/v1/symptoms/{date}', [$symptomController, 'getByDate']);
+$router->add('DELETE', '/api/v1/symptoms/{date}', [$symptomController, 'delete']);
 
 // Cycle stats & calendar
 $router->add('GET', '/api/v1/cycles/summary', [$periodController, 'summary']);

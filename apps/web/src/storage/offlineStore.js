@@ -4,7 +4,7 @@
  */
 
 const DB_NAME = 'haidku_offline_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class OfflineStore {
   constructor() {
@@ -32,6 +32,12 @@ class OfflineStore {
         if (!db.objectStoreNames.contains('periods')) {
           const periodStore = db.createObjectStore('periods', { keyPath: 'id' });
           periodStore.createIndex('start_date', 'start_date', { unique: false });
+        }
+
+        // Store: daily symptoms (ERD daily_symptoms)
+        if (!db.objectStoreNames.contains('symptoms')) {
+          const symptomStore = db.createObjectStore('symptoms', { keyPath: 'observation_date' });
+          symptomStore.createIndex('observation_date', 'observation_date', { unique: true });
         }
 
         // Store: settings
@@ -143,6 +149,98 @@ class OfflineStore {
     });
   }
 
+  // ----------------------------------------
+  // Daily Symptoms Methods (ERD daily_symptoms)
+  // ----------------------------------------
+  async getSymptoms() {
+    const db = await this.initDB();
+    if (!db) {
+      return this._getLocal('symptoms') || [];
+    }
+
+    return new Promise((resolve) => {
+      const tx = db.transaction('symptoms', 'readonly');
+      const store = tx.objectStore('symptoms');
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        const list = req.result || [];
+        list.sort((a, b) => b.observation_date.localeCompare(a.observation_date));
+        resolve(list);
+      };
+      req.onerror = () => resolve([]);
+    });
+  }
+
+  async getSymptomByDate(date) {
+    const db = await this.initDB();
+    if (!db) {
+      const list = this._getLocal('symptoms') || [];
+      return list.find((s) => s.observation_date === date) || null;
+    }
+
+    return new Promise((resolve) => {
+      const tx = db.transaction('symptoms', 'readonly');
+      const store = tx.objectStore('symptoms');
+      const req = store.get(date);
+
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async saveSymptom(symptomData) {
+    const db = await this.initDB();
+    const date = symptomData.observation_date;
+    const now = new Date().toISOString();
+
+    const record = {
+      observation_date: date,
+      pain_scale: symptomData.pain_scale !== undefined ? Number(symptomData.pain_scale) : 0,
+      flow_level: symptomData.flow_level || null,
+      mood: symptomData.mood || 'calm',
+      symptoms: Array.isArray(symptomData.symptoms) ? symptomData.symptoms : [],
+      notes: symptomData.notes || '',
+      updated_at: now,
+    };
+
+    if (!db) {
+      const list = this._getLocal('symptoms') || [];
+      const idx = list.findIndex((s) => s.observation_date === date);
+      if (idx >= 0) list[idx] = record;
+      else list.push(record);
+      this._setLocal('symptoms', list);
+      return record;
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('symptoms', 'readwrite');
+      const store = tx.objectStore('symptoms');
+      const req = store.put(record);
+
+      req.onsuccess = () => resolve(record);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async deleteSymptom(date) {
+    const db = await this.initDB();
+    if (!db) {
+      const list = (this._getLocal('symptoms') || []).filter((s) => s.observation_date !== date);
+      this._setLocal('symptoms', list);
+      return true;
+    }
+
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('symptoms', 'readwrite');
+      const store = tx.objectStore('symptoms');
+      const req = store.delete(date);
+
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   async getSettings() {
     const db = await this.initDB();
     const defaults = {
@@ -191,6 +289,7 @@ class OfflineStore {
 
   async exportAll() {
     const periods = await this.getPeriods();
+    const symptoms = await this.getSymptoms();
     const settings = await this.getSettings();
 
     return {
@@ -199,6 +298,7 @@ class OfflineStore {
       exported_at: new Date().toISOString(),
       settings,
       periods,
+      symptoms,
     };
   }
 
@@ -206,14 +306,22 @@ class OfflineStore {
     const db = await this.initDB();
     if (!db) {
       localStorage.removeItem('haidku_periods');
+      localStorage.removeItem('haidku_symptoms');
       localStorage.removeItem('haidku_settings');
       return true;
     }
 
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(['periods', 'settings'], 'readwrite');
+      const stores = ['periods', 'settings'];
+      if (db.objectStoreNames.contains('symptoms')) {
+        stores.push('symptoms');
+      }
+      const tx = db.transaction(stores, 'readwrite');
       tx.objectStore('periods').clear();
       tx.objectStore('settings').clear();
+      if (db.objectStoreNames.contains('symptoms')) {
+        tx.objectStore('symptoms').clear();
+      }
 
       tx.oncomplete = () => resolve(true);
       tx.onerror = () => reject(tx.error);

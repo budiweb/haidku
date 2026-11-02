@@ -69,6 +69,91 @@ class ApiAdapter {
     return true;
   }
 
+  // ----------------------------------------
+  // Symptoms Adapter Methods (ERD daily_symptoms)
+  // ----------------------------------------
+  async getSymptoms(from, to) {
+    const local = await offlineStore.getSymptoms();
+    if (navigator.onLine) {
+      try {
+        const query = from && to ? `?from=${from}&to=${to}` : '';
+        const res = await fetch(`${this.apiBase}/symptoms${query}`, {
+          headers: this._getHeaders(),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (Array.isArray(json.data)) {
+            for (const item of json.data) {
+              await offlineStore.saveSymptom(item);
+            }
+            return await offlineStore.getSymptoms();
+          }
+        }
+      } catch (e) {
+        // Fallback local
+      }
+    }
+    return local;
+  }
+
+  async getSymptomByDate(date) {
+    const local = await offlineStore.getSymptomByDate(date);
+    if (local) return local;
+
+    if (navigator.onLine) {
+      try {
+        const res = await fetch(`${this.apiBase}/symptoms/${date}`, {
+          headers: this._getHeaders(),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) {
+            await offlineStore.saveSymptom(json.data);
+            return json.data;
+          }
+        }
+      } catch (e) {
+        // offline
+      }
+    }
+    return null;
+  }
+
+  async saveSymptom(data) {
+    const savedLocal = await offlineStore.saveSymptom(data);
+
+    if (navigator.onLine) {
+      try {
+        await fetch(`${this.apiBase}/symptoms`, {
+          method: 'POST',
+          headers: this._getHeaders(),
+          body: JSON.stringify(data),
+        });
+      } catch (e) {
+        // Enqueued locally in IDB
+      }
+    }
+
+    return savedLocal;
+  }
+
+  async deleteSymptom(date) {
+    await offlineStore.deleteSymptom(date);
+
+    if (navigator.onLine) {
+      try {
+        await fetch(`${this.apiBase}/symptoms/${date}`, {
+          method: 'DELETE',
+          headers: this._getHeaders(),
+        });
+      } catch (e) {
+        // Offline
+      }
+    }
+
+    return true;
+  }
+
   async getCycleSummary() {
     const periods = await this.getPeriods();
     return CycleEngine.computeCycleStats(periods);

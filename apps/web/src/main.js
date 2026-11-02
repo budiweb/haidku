@@ -11,6 +11,7 @@ import { CycleEngine } from './domain/CycleEngine.js';
 import { renderHeader } from './components/Header.js';
 import { renderBottomNav } from './components/BottomNav.js';
 import { openPeriodModal } from './components/PeriodModal.js';
+import { openSymptomModal } from './components/SymptomModal.js';
 import { openOnboardingModal } from './components/OnboardingModal.js';
 import { openSDMConsentModal } from './components/SDMConsentModal.js';
 import { openInboxModal } from './components/InboxModal.js';
@@ -116,6 +117,29 @@ class HaidKuApp {
     this.render();
   }
 
+  async handleSaveSymptom(symptomData) {
+    await apiAdapter.saveSymptom(symptomData);
+    this.showToast('Gejala harian berhasil dicatat');
+    this.render();
+  }
+
+  async handleDeleteSymptom(date) {
+    await apiAdapter.deleteSymptom(date);
+    this.showToast('Catatan gejala berhasil dihapus');
+    this.render();
+  }
+
+  openSymptomModal(defaultDate = null) {
+    offlineStore.getSymptomByDate(defaultDate || new Date().toISOString().slice(0, 10)).then((existing) => {
+      openSymptomModal({
+        symptom: existing,
+        defaultDate,
+        onSave: (data) => this.handleSaveSymptom(data),
+        onDelete: (date) => this.handleDeleteSymptom(date),
+      });
+    });
+  }
+
   openAddModal(defaultDate = null) {
     openPeriodModal({
       defaultDate,
@@ -160,6 +184,7 @@ class HaidKuApp {
             periods: this.periods,
             settings: this.settings,
             onOpenAddModal: () => this.openAddModal(),
+            onOpenSymptomModal: (d) => this.openSymptomModal(d),
             onOpenSDMConsent: () => {
               openSDMConsentModal({
                 onConsentGiven: async () => {
@@ -205,6 +230,7 @@ class HaidKuApp {
             periods: this.periods,
             stats: this.stats,
             onOpenAddModal: (date) => this.openAddModal(date),
+            onOpenSymptomModal: (date) => this.openSymptomModal(date),
             onEditPeriod: (p) => this.openEditModal(p),
           })
         );

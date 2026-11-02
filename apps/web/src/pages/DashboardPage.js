@@ -4,7 +4,7 @@
 
 import { SDMEngine } from '../domain/SDMEngine.js';
 
-export function renderDashboardPage({ stats, periods = [], settings = {}, onOpenAddModal, onNavigate, onOpenSDMConsent }) {
+export function renderDashboardPage({ stats, periods = [], settings = {}, onOpenAddModal, onOpenSymptomModal, onNavigate, onOpenSDMConsent }) {
   const container = document.createElement('div');
   container.className = 'p-4 space-y-4 fade-in';
 
@@ -125,13 +125,20 @@ export function renderDashboardPage({ stats, periods = [], settings = {}, onOpen
       `}
     </div>
 
-    <!-- Quick CTA Button -->
-    <div>
-      <button id="btn-hero-add" class="btn-tap w-full bg-rose-500 hover:bg-rose-600 active:scale-[0.99] text-white font-bold py-3.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center space-x-2 text-sm">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- Quick CTA Buttons Grid -->
+    <div class="grid grid-cols-2 gap-2.5">
+      <button id="btn-hero-add" class="btn-tap bg-rose-500 hover:bg-rose-600 active:scale-[0.99] text-white font-bold py-3.5 px-3 rounded-xl shadow-xs transition-all flex items-center justify-center space-x-1.5 text-xs">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
         </svg>
-        <span>+ Catat Haid Sekarang</span>
+        <span>+ Catat Haid</span>
+      </button>
+
+      <button id="btn-symptom-add" class="btn-tap bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 font-bold py-3.5 px-3 rounded-xl shadow-xs transition-all flex items-center justify-center space-x-1.5 text-xs">
+        <svg class="w-4 h-4 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>Catat Gejala</span>
       </button>
     </div>
 
@@ -240,6 +247,9 @@ export function renderDashboardPage({ stats, periods = [], settings = {}, onOpen
 
   // Event Listeners
   container.querySelector('#btn-hero-add').addEventListener('click', onOpenAddModal);
+  container.querySelector('#btn-symptom-add')?.addEventListener('click', () => {
+    if (typeof onOpenSymptomModal === 'function') onOpenSymptomModal();
+  });
   container.querySelector('#btn-why-status')?.addEventListener('click', () => onNavigate('education'));
   container.querySelector('#btn-activate-sdm')?.addEventListener('click', onOpenSDMConsent);
   container.querySelector('#btn-learn-sdm-link')?.addEventListener('click', () => onNavigate('education'));
