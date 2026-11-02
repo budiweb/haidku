@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HaidKu</string>
+    <string name="title_activity_main">HaidKu</string>
+    <string name="package_name">id.haidku.app</string>
+    <string name="custom_url_scheme">id.haidku.app</string>
+</resources>

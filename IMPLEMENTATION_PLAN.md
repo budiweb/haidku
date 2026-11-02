@@ -2,7 +2,7 @@
 **Aplikasi Pelacak Menstruasi PWA + Hybrid (Android/iOS)**  
 **Tagline:** *Kenali Siklusmu, Pahami Tubuhmu*  
 **Versi:** 1.0.0 | **Tanggal:** 3 November 2026  
-**Status:** In Progress (Eksekusi Aktif Sprint 0 & 1)
+**Status:** Completed (Sprint 0 s.d. Sprint 6 Selesai & Terverifikasi)
 
 ---
 
@@ -82,10 +82,15 @@
 - [x] PWA installable flow (`beforeinstallprompt` prompt listener & install banner).
 - [x] Ekspor data (JSON) dan penghapusan data permanen (right to erasure UU No. 27/2022 PDP).
 
-### Sprint 5 & 6 — Hybrid Android & iOS (Capacitor)
-- [ ] Konfigurasi Capacitor dengan `webDir: apps/web/dist`.
-- [ ] Pengujian mobile responsiveness, safe area, status bar, offline airplane mode.
-- [ ] Penyiapan struktur Android & dokumentasi iOS Xcode.
+### Sprint 5 & 6 — Hybrid Android & iOS (Capacitor) (SELESAI)
+- [x] Konfigurasi Capacitor dengan `webDir: apps/web/dist` dan Application ID `id.haidku.app`.
+- [x] Inisialisasi target native Android di `apps/web/android` dengan permission `INTERNET`, `ACCESS_NETWORK_STATE`, dan `POST_NOTIFICATIONS`.
+- [x] Pengaturan `network_security_config.xml` untuk pengembangan lokal dan secure HTTPS default.
+- [x] Inisialisasi target native iOS di `apps/web/ios/App` (Xcode workspace).
+- [x] Dokumentasi komprehensif instruksi build iOS di macOS / Xcode (`docs/HYBRID_IOS_SETUP.md`).
+- [x] Pengujian mobile responsiveness, safe area, status bar, dan offline path.
+- [x] Automated test suites 100% lulus (49 test backend PHP, 27 test frontend JS).
+- [x] Tidak ada aksi destruktif atau publikasi ke App Store/Play Store tanpa mandat eksplisit.
 
 ---
 

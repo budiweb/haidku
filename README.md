@@ -76,18 +76,40 @@ Buka browser pada `http://127.0.0.1:8000/`.
 
 ## 🧪 Menjalankan Pengujian Otomatis
 
-### 1. Test Suite Backend PHP (Unit, Date Math, Repository & Ownership)
-Menguji selisih kalender (T01), durasi menstruasi inklusif (T02), tahun kabisat (T17), isolasi data pengguna (T19), idempotency (T27), dan filtering flek/spotting (T11):
+### 1. Test Suite Backend PHP (Unit, Date Math, Repository, Ownership, SDM, Sync)
+Menguji selisih kalender (T01), durasi menstruasi inklusif (T02), tahun kabisat (T17), isolasi data pengguna (T19), idempotency (T27), filtering flek/spotting (T11), aturan klinis Standard Days Method T03-T13, T18, audit copy medis (T23), dan sinkronisasi mutasi T21, T26:
 ```bash
 php apps/api/tests/run_tests.php
 ```
-*Hasil: 22 tests passed, 0 failed (100% success).*
+*Hasil: 49 tests passed, 0 failed (100% success).*
 
-### 2. Test Suite Frontend JavaScript (Domain Parity)
+### 2. Test Suite Frontend JavaScript (Domain Parity, SDM, Privacy Lock Screen)
+Menguji CycleEngine, SDMEngine, audit teks medis, dan privasi notifikasi pada lock screen (T20, T28, T29):
 ```bash
 node apps/web/tests/cycleEngine.test.js
 ```
-*Hasil: 12 tests passed, 0 failed (100% success).*
+*Hasil: 27 tests passed, 0 failed (100% success).*
+
+---
+
+## 📱 Hybrid Android & iOS (Capacitor)
+HaidKu menggunakan satu codebase frontend di `apps/web` yang dibundel langsung ke target native Android dan iOS:
+
+### Android:
+- Proyek native terletak di `apps/web/android/`.
+- Izin yang dikonfigurasi: `INTERNET`, `ACCESS_NETWORK_STATE`, dan `POST_NOTIFICATIONS`.
+- Konfigurasi `network_security_config.xml` untuk keamanan HTTPS di produksi serta akses emulator dev lokal.
+- Sinkronisasi aset web:
+  ```bash
+  cd apps/web
+  npm run build
+  npx cap sync android
+  ```
+
+### iOS (Xcode):
+- Proyek Xcode terletak di `apps/web/ios/App/App.xcworkspace`.
+- Sesuai spesifikasi `TEST_CASES_HAIDKU.md`, kompilasi native iOS berstatus *NOT TESTED (Windows environment)* dan memerlukan macOS + Xcode 15+.
+- Panduan lengkap kompilasi di macOS tersedia di [`docs/HYBRID_IOS_SETUP.md`](docs/HYBRID_IOS_SETUP.md).
 
 ---
 
@@ -146,6 +168,11 @@ haidku/
 | `DELETE` | `/api/v1/periods/{id}` | Hapus catatan haid (soft-delete) |
 | `GET` | `/api/v1/cycles/summary` | Statistik siklus (median, prediksi haid, ovulasi edukatif) |
 | `GET` | `/api/v1/cycles/calendar` | Pemetaan hari per bulan (aktual, prediksi, masa subur) |
+| `GET` | `/api/v1/fertility/estimate` | Estimasi jendela subur edukatif & probabilitas kualitatif |
+| `GET` | `/api/v1/fertility/sdm-status` | Evaluasi kelayakan & status harian Standard Days Method (SDM) |
+| `POST` | `/api/v1/acknowledgements` | Simpan informed consent kepatuhan metode SDM |
+| `POST` | `/api/v1/sync/push` | Pengiriman mutasi batch offline dengan deteksi konflik |
+| `GET` | `/api/v1/sync/pull` | Pengambilan perubahan data terbaru dari server |
 | `GET` | `/api/v1/educational-articles` | Artikel edukasi klinis tervalidasi |
 | `GET` | `/api/v1/me` | Profil & preferensi pengguna aktif |
 | `PUT` | `/api/v1/me/settings` | Perbarui tujuan, preferensi privasi & notifikasi |
