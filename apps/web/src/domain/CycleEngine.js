@@ -20,6 +20,24 @@ export class CycleEngine {
   }
 
   /**
+   * Alias untuk calculateDaysBetween
+   */
+  static diffDays(d1, d2) {
+    return this.calculateDaysBetween(d1, d2);
+  }
+
+  /**
+   * Menghitung nilai tengah (median) dari deret angka
+   */
+  static calculateMedian(numbers = []) {
+    if (!numbers || numbers.length === 0) return 28;
+    const sorted = [...numbers].sort((a, b) => a - b);
+    const n = sorted.length;
+    const mid = Math.floor(n / 2);
+    return n % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+  }
+
+  /**
    * T02: Menghitung durasi perdarahan haid inklusif.
    * Contoh: 1 Jan s/d 5 Jan = 5 hari.
    */

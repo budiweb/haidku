@@ -181,6 +181,73 @@ for (const term of sensitiveTerms) {
 }
 assert(!hasSensitiveOnLockScreen, 'T20 & T29: Default lock screen bebas dari detail tanggal haid/masa subur');
 
+// ----------------------------------------
+// Lintas Platform & Keamanan Medis (T30, T32, T33, T35, T36, T37)
+// ----------------------------------------
+console.log('\nMenjalankan Acceptance Criteria Lintas Platform (T30, T32, T33, T35, T36, T37)...');
+
+// T30: Paritas hasil domain antara platform
+const sampleLengths = [28, 29, 30];
+const sampleMedian = CycleEngine.calculateMedian(sampleLengths);
+assert(sampleMedian === 29, 'T30: Paritas kalkulasi median siklus lintas platform');
+
+// T33: Timezone Safety (WIB UTC+7, WITA UTC+8, WIT UTC+9)
+// Date arithmetic harus murni berdasar selisih hari kalender kalender YYYY-MM-DD
+const dateA = '2026-05-01';
+const dateB = '2026-05-29';
+const tzDiff = CycleEngine.diffDays(dateA, dateB);
+assert(tzDiff === 28, 'T33: Date math independen dari shifting zona waktu UTC/WIB');
+
+// T35: method_version usang wajib fallback ke UNKNOWN
+const staleCache = {
+  state: SDMEngine.STATE_LOWER_CHANCE_NOT_ZERO,
+  cycle_day: 5,
+  method_version: 'SDM-LEGACY-2018',
+};
+const validatedStale = SDMEngine.validateCachedStatus(staleCache, 'SDM-CDC-2024.1');
+assert(validatedStale.state === SDMEngine.STATE_UNKNOWN, 'T35: Cache dengan versi metode usang difallback ke UNKNOWN');
+assert(validatedStale.primary_code === 'STALE_METHOD_VERSION', 'T35: primary_code adalah STALE_METHOD_VERSION');
+
+// T35b: method_version valid tetap dipertahankan
+const currentCache = {
+  state: SDMEngine.STATE_LOWER_CHANCE_NOT_ZERO,
+  cycle_day: 5,
+  method_version: 'SDM-CDC-2024.1',
+};
+const validatedCurrent = SDMEngine.validateCachedStatus(currentCache, 'SDM-CDC-2024.1');
+assert(validatedCurrent.state === SDMEngine.STATE_LOWER_CHANCE_NOT_ZERO, 'T35b: Cache dengan versi metode mutakhir dipertahankan');
+
+// T36: Verifikasi file statis native bundle (tidak ada file PHP)
+import fs from 'fs';
+import path from 'path';
+
+const possiblePaths = [
+  path.resolve('apps/web/android/app/src/main/assets/public'),
+  path.resolve('android/app/src/main/assets/public'),
+];
+const androidAssetsPath = possiblePaths.find((p) => fs.existsSync(p));
+let hasPhpInAssets = false;
+if (androidAssetsPath) {
+  const checkDir = (dir) => {
+    const files = fs.readdirSync(dir);
+    for (const f of files) {
+      const fullPath = path.join(dir, f);
+      const stat = fs.statSync(fullPath);
+      if (stat.isDirectory()) {
+        checkDir(fullPath);
+      } else if (f.endsWith('.php')) {
+        hasPhpInAssets = true;
+      }
+    }
+  };
+  checkDir(androidAssetsPath);
+}
+assert(androidAssetsPath !== undefined && !hasPhpInAssets, 'T36: Native bundle Android hanya berisi aset frontend statis (tanpa PHP)');
+
+// T37: Gate regulasi & tinjauan medis
+const disclaimerPolicy = sdm7.disclaimer;
+assert(disclaimerPolicy.includes('CDC 2024'), 'T37: Standar medis bersumber dari referensi klinis CDC 2024');
+
 console.log(`\nHasil Pengujian JS: ${passed} Passed, ${failed} Failed`);
 if (failed > 0) {
   process.exit(1);

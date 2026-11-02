@@ -198,4 +198,30 @@ export class SDMEngine {
       disclaimer: 'Standard Days Method memiliki angka kegagalan 13 kehamilan per 100 wanita per tahun pada penggunaan tipikal (CDC 2024).',
     };
   }
+
+  /**
+   * T35: Memvalidasi cache SDM status offline.
+   * Bila versi metode usang, jangan tampilkan status berpeluang rendah; wajib fallback ke UNKNOWN.
+   */
+  static validateCachedStatus(cachedStatus, currentMethodVersion = 'SDM-CDC-2024.1') {
+    if (!cachedStatus || typeof cachedStatus !== 'object') {
+      return null;
+    }
+
+    if (cachedStatus.method_version !== currentMethodVersion) {
+      return {
+        state: this.STATE_UNKNOWN,
+        cycle_day: cachedStatus.cycle_day || 0,
+        headline: 'Aturan Klinis Diperbarui (UNKNOWN)',
+        message: 'Versi aturan evaluasi klinis telah diperbarui. Status tidak dapat ditampilkan dari cache lama dan perlu dievaluasi ulang.',
+        warning: 'Gunakan perlindungan kontrasepsi lain sampai evaluasi ulang selesai.',
+        reasons: ['Versi metode klinis pada cache lokal telah usang.'],
+        primary_code: 'STALE_METHOD_VERSION',
+        method_version: currentMethodVersion,
+        disclaimer: 'Keamanan pengguna diutamakan ketika terjadi perubahan panduan klinis.',
+      };
+    }
+
+    return cachedStatus;
+  }
 }

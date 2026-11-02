@@ -118,6 +118,25 @@ class SDMTest
         }
         $this->assertEqual($hasForbidden, false, 'T23: Audit copy medis bebas dari "100% aman", "hari aman", "risiko nol"');
 
+        // T35: method_version usang pada state offline wajib fallback ke UNKNOWN
+        $staleCache = [
+            'state'          => SDMService::STATE_LOWER_CHANCE_NOT_ZERO,
+            'cycle_day'      => 6,
+            'method_version' => 'SDM-LEGACY-2018',
+        ];
+        $validatedStale = SDMService::validateCachedStatus($staleCache, 'SDM-CDC-2024.1');
+        $this->assertEqual($validatedStale['state'], SDMService::STATE_UNKNOWN, 'T35: Cache dengan versi metode usang difallback ke UNKNOWN');
+        $this->assertEqual($validatedStale['primary_code'], 'STALE_METHOD_VERSION', 'T35: primary_code adalah STALE_METHOD_VERSION');
+
+        // T35b: method_version valid tetap dipertahankan
+        $currentCache = [
+            'state'          => SDMService::STATE_LOWER_CHANCE_NOT_ZERO,
+            'cycle_day'      => 6,
+            'method_version' => 'SDM-CDC-2024.1',
+        ];
+        $validatedCurrent = SDMService::validateCachedStatus($currentCache, 'SDM-CDC-2024.1');
+        $this->assertEqual($validatedCurrent['state'], SDMService::STATE_LOWER_CHANCE_NOT_ZERO, 'T35b: Cache dengan versi metode mutakhir dipertahankan');
+
         echo "\nHasil SDMTest: {$this->passed} Passed, {$this->failed} Failed\n";
         return $this->failed === 0;
     }
