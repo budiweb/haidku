@@ -129,3 +129,4 @@ class SyncTest
         return $this->failed === 0;
     }
 }
+

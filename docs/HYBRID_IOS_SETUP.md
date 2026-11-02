@@ -72,3 +72,4 @@ npx cap open ios
 ## 4. Kebijakan Distribusi & App Store
 - Dilarang mempublikasikan atau submit ke Apple App Store tanpa mandat dan persetujuan eksplisit dari pemilik produk.
 - Semua klaim terkait Standard Days Method (SDM) dan pencegahan kehamilan harus melalui peninjauan klinis dan regulasi medis sebelum promosi publik.
+

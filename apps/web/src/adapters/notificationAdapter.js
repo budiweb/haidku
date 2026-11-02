@@ -130,3 +130,4 @@ class NotificationAdapter {
 }
 
 export const notificationAdapter = new NotificationAdapter();
+

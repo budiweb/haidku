@@ -69,3 +69,4 @@ export function openInboxModal({ onClosed }) {
     if (e.target === modalContainer) close();
   });
 }
+
